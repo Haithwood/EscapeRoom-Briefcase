@@ -1,13 +1,24 @@
 #include "Arduino.h"
 #include "DFRobotDFPlayerMini.h"
 
-//connect TX/RX to pins 18/19
+// connect TX/RX to pins 18/19
+// yellow goes to 18/ yellow goes to 19
 #define FPSerial Serial1
 
-DFRobotDFPlayerMini myDFPlayer;
-void printDetail(uint8_t type, int value);
+// Revise the mp3 files on the SD card to match the relevant order 
+// Figuring out what the order is requires testing once the audio- 
+// files are replaced, preferably with a sheet of paper.
 
-int state = 0;
+#define AUDIO_1 2
+#define AUDIO_2 3
+#define AUDIO_3 1
+
+DFRobotDFPlayerMini myDFPlayer;
+// static bool trackStarted = false;
+uint8_t type;
+
+void printDetail(uint8_t type, int value);
+void waitForAudioToFinish();
 
 void setup() {
   FPSerial.begin(9600);  // Start Serial1 for DFPlayer
@@ -28,26 +39,27 @@ void setup() {
   Serial.println(F("DFPlayer Mini online."));
 
   myDFPlayer.volume(10);  // Set volume (0-30)
-  myDFPlayer.play(1);     // Play first MP3
 }
 
 void loop() {
-  if (state == 0) {
+  Serial.println("Loop starting");
+
+  myDFPlayer.play(AUDIO_2);  // change the audio number to test the relevant file
+  waitForAudioToFinish();
+
+  Serial.println("Audio file finished playing");
+}
+
+void waitForAudioToFinish() {
+  type = 0;
+  while (type != DFPlayerPlayFinished) {
     if (myDFPlayer.available()) {
-      uint8_t type = myDFPlayer.readType();
-      int value = myDFPlayer.read();
-
-      if (type == DFPlayerPlayFinished) {
-        state++;  // Increment state when a track finishes
-        Serial.println("Track finished! next state... ");
-      }
-
-      // Optional: still print all details
-      printDetail(type, value);
+      delay(100);
+      Serial.println("checking for finished playing");
+      type = myDFPlayer.readType();
     }
   }
 }
-
 
 void printDetail(uint8_t type, int value) {
   switch (type) {
